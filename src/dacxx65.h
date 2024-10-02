@@ -4,6 +4,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 #define DACXX65_REFERENCE_ALWAYS_POWERED_DOWN 0x2000
 #define DACXX65_REFERENCE_POWERED_TO_DEFAULT 0x0000
@@ -25,8 +26,6 @@
 #define DACXX65_SIMULTANEOUS_UPDATE     DACXX65_MASK_LD1                 /* LD1=1,LD0=0 */
 #define DACXX65_BROADCAST_UPDATE        DACXX65_MASK_LD1 | DACXX65_MASK_LD0 /* LD1=1,LD0=1 */
 
-#define DACXX65_MAX_SCALE 4096
-
 typedef enum
 {
     DACXX65_CHANNEL_A = 0,
@@ -45,12 +44,12 @@ typedef enum
 
 typedef struct __DACXX65_T_
 {
-    void (*fp_spi_tx)(uint8_t);
-    void (*fp_cs_enable)(bool);
+    void (*fp_spi_tx)(uint32_t);
+    void (*fp_sync_enable)(bool);
     DACXX65_BIT_t datawidth;
 } DACXX65_t;
 
-void DACXX65_Init(DACXX65_t *, DACXX65_BIT_t, void (*)(uint8_t), void (*)(bool));
+void DACXX65_Init(DACXX65_t *, DACXX65_BIT_t, void (*)(uint32_t), void (*)(bool));
 void DACXX65_SetReference(DACXX65_t *, uint16_t);
 void DACXX65_WriteChannel(DACXX65_t *, uint8_t, uint16_t);
 void DACXX65_SetChannelPower(DACXX65_t *, uint8_t, uint16_t);

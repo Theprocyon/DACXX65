@@ -2,9 +2,9 @@
 
 static void DACXX65_Write24b(DACXX65_t *, uint32_t);
 
-void DACXX65_Init(DACXX65_t *dac, DACXX65_BIT_t bit, void (*fp_spi_tx)(uint8_t *, uint8_t), void (*fp_cs_enable)(bool))
+void DACXX65_Init(DACXX65_t *dac, DACXX65_BIT_t bit, void (*fp_spi_tx)(uint32_t), void (*fp_sync_enable)(bool))
 {
-    dac->fp_cs_enable = fp_cs_enable;
+    dac->fp_sync_enable = fp_sync_enable;
     dac->fp_spi_tx = fp_spi_tx;
     dac->datawidth = bit;
 }
@@ -42,7 +42,7 @@ void DACXX65_SetChannelPower(DACXX65_t *dac, DACXX65_CHANNEL_t ch, uint16_t powe
 
 void DACXX65_WriteChannel(DACXX65_t *dac, DACXX65_CHANNEL_t ch, uint16_t value)
 {
-    uint32_t data;
+    uint32_t data = 0;
 
     switch (ch)
     {
@@ -68,36 +68,33 @@ void DACXX65_WriteChannel(DACXX65_t *dac, DACXX65_CHANNEL_t ch, uint16_t value)
     switch (dac->datawidth)
     {
     case DACXX65_12BIT:
-        data |= value << 4;
+        data |= (value << 4) & (0xFFFF);
         break;
     case DACXX65_14BIT:
-        data |= value << 2;
+        data |= (value << 2) & (0xFFFF);
         break;
     case DACXX65_16BIT:
-        data |= value;
+        data |= (value << 0) & (0xFFFF);
         break;
     default:
         return;
         break;
     }
 
-    DACXX65_Write24b(data);
+    DACXX65_Write24b(dac, data);
 }
 
 static void DACXX65_Write24b(DACXX65_t *dac, uint32_t data)
 {
     // Write Right aligned 24bit data
 
-    void (*const CS)(bool) = dac->fp_cs_enable;
-    void (*const SPI_TX)(uint8_t) = dac->fp_spi_tx;
+    void (*const SYNC)(bool) = dac->fp_sync_enable;
 
-    if (CS != NULL)
-        CS(true);
+    if (SYNC != NULL)
+    	SYNC(true);
 
-    SPI_TX((uint8_t)((data >> 16) & 0xFF));
-    SPI_TX((uint8_t)((data >> 8 ) & 0xFF));
-    SPI_TX((uint8_t)((data >> 0 ) & 0xFF));
+    dac->fp_spi_tx(data);
 
-    if (CS != NULL)
-        CS(false);
+    if (SYNC != NULL)
+    	SYNC(false);
 }
